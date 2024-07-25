@@ -1,0 +1,7 @@
+build*
+.idea
+.vscode
+*.log
+__pycache__
+*.egg-info
+data
