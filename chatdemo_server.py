@@ -32,14 +32,16 @@ class ChatdemoServer(Server):
     
     async def handle_talkshow(self, socket: zmq.asyncio.Socket):
         self.meta["talkshow"] = meta = await socket.recv_json()
+        print(f"[Server] handle talkshow meta {meta}")
+
         fps = meta["fps"]
         frameId = 0
         while True:
             obj = await socket.recv_json()
             if not obj:
                 break
-            await self.talkshow_queue.put(obj, frameId / fps)
-            print(f"handle talkshow put frameId {frameId}")
+            await self.talkshow_queue.put((obj, frameId / fps))
+            print(f"[Server] handle talkshow\t put frameId {frameId} time {frameId / fps:5.2f}")
             frameId += 1
             
         socket.close()
@@ -47,14 +49,16 @@ class ChatdemoServer(Server):
             
     async def handle_flame(self, socket: zmq.asyncio.Socket):
         self.meta["flame"] = meta = await socket.recv_json()
+        print(f"[Server] handle flame meta {meta}")
+
         fps = meta["fps"]
         frameId = 0
         while True:
-            obj = await socket.recv_json()
+            obj = await socket.recv()
             if not obj:
                 break
-            await self.flame_queue.put(obj, frameId / fps)
-            print("handle flame put")
+            await self.flame_queue.put((obj, frameId / fps))
+            print(f"[Server] handle flame\t put frameId {frameId} time {frameId / fps:5.2f}")
             frameId += 1
             
     # async def handle_audio(self, socket: zmq.asyncio.Socket):
@@ -63,27 +67,34 @@ class ChatdemoServer(Server):
     #         await self.audio_queue.put(clip)
     
     async def handle_easyvolcap(self, socket: zmq.asyncio.Socket):
+        
+        self.meta["easyvolcap"] = meta = await socket.recv_json()
+        recv_time = meta["recv_time"]
+        print(f"[Server] handle easyvolcap meta {meta}")
         while not (self.talkshow_queue.empty() and self.talkshow_input_finished):
             await socket.recv() # wait for renderer ready signal
-            print("render ready signal recieved")
+            print("[Server] render ready signal recieved")
             if not self.session_on: # first frame. reset clock
                 self.session_on = True
                 self.clock.reset_time()
             
             # TODO 如果要做插值的话，就在这里做。目前只是拿出来了当前时刻的一帧。
             async def get_current_frame(queue: asyncio.Queue) -> Dict:
-                print(f"get_current_frame")
                 obj, obj_time = await queue.get()
-                print(f"obj time {obj_time}, cur time: {self.clock.get_current_time()}")
                 while not queue.empty() and obj_time < self.clock.get_current_time():
-                    obj = queue.get_nowait()
-                return obj
+                    obj, obj_time = queue.get_nowait()
+                return obj, obj_time
                 
-            pose = await get_current_frame(self.talkshow_queue)
-            flame = await get_current_frame(self.flame_queue)
+            pose, pose_time = await get_current_frame(self.talkshow_queue)
+            flame, flame_time = await get_current_frame(self.flame_queue)
             
-            socket.send_json(pose)
-            socket.send(flame)
+            await socket.send_json(pose)
+            await socket.send(flame)
+            if (recv_time):
+                await socket.send_json({
+                    "pose_time": pose_time,
+                    "flame_time": flame_time,
+                })
 
 async def main():
     parser = argparse.ArgumentParser(description='Start an asyncio socket server.')
@@ -95,6 +106,7 @@ async def main():
             
     
 if __name__ == "__main__":
+    
     asyncio.run(main())
 
 

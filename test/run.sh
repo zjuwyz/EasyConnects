@@ -15,8 +15,6 @@ tmux split-window -h
 tmux selectp -t 3
 tmux split-window -h
 
-sleep 1
-
 tmux selectp -t 1
 tmux send-keys 'which python' C-m
 tmux send-keys "python chatdemo_server.py" C-m
@@ -32,3 +30,5 @@ tmux send-keys "python test/fake_easyvolcap.py" C-m
 tmux selectp -t 4
 tmux send-keys 'which python' C-m
 tmux send-keys "python test/fake_flame.py" C-m
+
+tmux attach

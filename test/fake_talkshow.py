@@ -8,15 +8,16 @@ def fake_talkshow(path, **kwargs):
     fps = kwargs['fps']
     send_fps = kwargs['send_fps']
     loop = kwargs['loop']
-    files = os.listdir(path).sort()
+    files = os.listdir(path)
+    files.sort()
     start = time.time()
     
     socket = Client(topic)
-    socket.send_json({
-        "fps": fps
-    }) # meta
-    
-    while loop:
+    meta = {"fps": fps}
+    socket.send_json(meta) # meta
+    print(f"meta sent")
+
+    while True:
         for frameId, file in enumerate(files):
             fullpath = os.path.join(path, file)
             with open(fullpath, "r") as f:
@@ -25,7 +26,7 @@ def fake_talkshow(path, **kwargs):
             obj["frameId"] = frameId
             socket.send_json(obj)
             now = time.time()
-            print(f"reltime +{now - start:.2f} talkshow send frameId {frameId} (+{frameId / fps:.2f})")
+            print(f"[Talkshow] {now - start:.2f} talkshow send frameId {frameId} (+{frameId / fps:.2f})")
             time.sleep(max(0, start + frameId / send_fps - now))
             
         if not loop:
