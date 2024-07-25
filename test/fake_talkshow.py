@@ -1,4 +1,4 @@
-from socketserver.socket_utils import Client
+from easyconnects import Client
 import json
 import os
 from typing import *

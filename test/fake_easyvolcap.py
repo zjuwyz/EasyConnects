@@ -1,5 +1,5 @@
 import time
-from socketserver.socket_utils import Client
+from easyconnects import Client
 
 def fake_easyvolcap(topic, fps, render_fps):
     socket = Client(topic)

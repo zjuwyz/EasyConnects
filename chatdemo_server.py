@@ -4,7 +4,7 @@ import zmq.asyncio
 import argparse
 import time
 import queue
-from socketserver.socket_utils import Server
+from easyconnects import Server
 import json
 from typing import *
 

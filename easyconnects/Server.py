@@ -2,10 +2,8 @@ import asyncio
 import zmq
 import zmq.asyncio
 from typing import *
-PORT = 12000
-HOST = "localhost"
-import io
-import numpy as np
+
+from . import EASYCONNECTS_HOST, EASYCONNECTS_PORT
 class Server:
     def __init__(self):
         self.__tasks: Dict[str, asyncio.Task] = {}
@@ -18,7 +16,7 @@ class Server:
     async def serve(self):
         self.__context = zmq.asyncio.Context.instance()
         self.__endpoint_socket = self.__context.socket(zmq.REP)
-        self.__endpoint_socket.bind(f"tcp://{HOST}:{PORT}")
+        self.__endpoint_socket.bind(f"tcp://{EASYCONNECTS_HOST}:{EASYCONNECTS_PORT}")
         print(f"Server listening on {self.__endpoint_socket.getsockopt(zmq.LAST_ENDPOINT).decode('ascii')}")
         
         while True:
@@ -48,45 +46,3 @@ class Server:
                 print(e)
                 await self.__endpoint_socket.send_string("Error: " + str(e))
                 
-    
-class Client(zmq.Socket):               
-    def __init__(self, name):
-        context = zmq.Context.instance()
-        init_socket: zmq.Socket = context.socket(zmq.REQ)
-        init_socket.connect(f"tcp://{HOST}:{PORT}")
-        init_socket.send_string(name)
-        endpoint = init_socket.recv_string()
-        init_socket.close()
-        if endpoint.startswith("Error"):
-            raise ValueError(endpoint)
-        print(f"Client {name} recieved endpoint: {endpoint}")
-        super().__init__(context, zmq.PAIR)
-        super().connect(endpoint)
-    
-    def send_npz(self, *args, **kwargs):
-        buf = io.BytesIO()
-        np.savez(buf, *args, **kwargs)
-        self.send(buf)
-        
-    def recv_npz(self):
-        b = self.recv()
-        buf = io.BytesIO(b)
-        return np.load(buf)
-        
-    
-    
-if __name__ == "__main__":
-    import threading
-    def client_thread():
-        client = Client("test")
-        i = 0
-        while True:
-            client.send_string(f"{i}")
-            i += 1
-            import time
-            time.sleep(1)
-            
-    thread = threading.Thread(target=client_thread)
-    thread.start()
-    
-    asyncio.run(Server().serve())
