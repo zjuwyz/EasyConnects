@@ -9,10 +9,6 @@ class Server:
         self.__tasks: Dict[str, asyncio.Task] = {}
         self.sockets: Dict[str, zmq.asyncio.Socket] = {}
     
-    async def handle_test(self, socket: zmq.asyncio.Socket):
-        while True:
-            print(await socket.recv_string())
-            
     async def serve(self):
         self.__context = zmq.asyncio.Context.instance()
         self.__endpoint_socket = self.__context.socket(zmq.REP)

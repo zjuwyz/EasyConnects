@@ -21,9 +21,7 @@ class MyServer(Server):
     async def handle_my_service(self, socket, meta):
         # The meta argument contains additional information about the client.
         print("Meta data:", meta)
-        while True:
-            message = await socket.recv_json()
-            # Process the message here
+        print(await )
 
 async def main():
     server = MyServer()

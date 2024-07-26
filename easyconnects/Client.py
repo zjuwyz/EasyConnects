@@ -34,6 +34,8 @@ class Client(zmq.Socket):
         buf.seek(0)
         self.send(buf.read())
         
-    def recv_npz(self):
+    def recv_npz(self, *args, **kwargs):
         buf = io.BytesIO(self.recv())
-        return np.load(buf)
+        return np.load(buf, *args, **kwargs)
+
+    
