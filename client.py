@@ -36,4 +36,4 @@ print(npz['mat'], npz['arr'])
 import torch
 t = torch.randn(10)
 bob.send_pt(t)
-print(alice.recv_pt())
+print(alice.recv_pt(weights_only=True))
