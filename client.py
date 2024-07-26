@@ -10,7 +10,7 @@ bob = Client("bob", key1=1, key2="2", key3=[3, 4, 5])
 # P.S. you may not want to do that explicitly. This is for reconnection.
 alice = Client("alice", alice="new")
 
-# Clients can send and receive string messages.
+# Clients can send/receive string messages.
 alice.send_string("test string")
 print(bob.recv_string())
 
