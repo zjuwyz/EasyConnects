@@ -13,7 +13,7 @@ alice = Client("alice", alice="new")
 alice.send_string("test string")
 print(bob.recv_string())
 
-# Clients can also send and receive raw bytes.
+# And also raw bytes.
 bob.send(b"\xDE\xAD\xBE\xEF")
 print(alice.recv())
 
@@ -25,8 +25,14 @@ print(bob.recv_json())
 bob.send_pyobj(set([1, '2']))
 print(alice.recv_pyobj())
 
-# In addition, we provide an interface that acts similar to np.savez()/np.load()
+# send_npz()/recv_npz() works like np.savez()/np.load()
 import numpy as np
 alice.send_npz(mat=np.eye(5), arr=np.random.normal(size=10))
 npz = bob.recv_npz()
 print(npz['mat'], npz['arr'])
+
+# send_pt()/load_pt() works like torch.save()/torch.load()
+import torch
+t = torch.randn(10)
+bob.send_pt(t)
+print(alice.recv_pt())
