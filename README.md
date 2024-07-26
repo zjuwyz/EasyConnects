@@ -47,4 +47,5 @@ client.send_json({"message": "Hello, Server!"})
 In this example, the client is connecting to a service named "my_service". It sends a JSON message to the server using send_json. The additional information (user and role) is sent as keyword arguments when creating the Client instance and can be accessed on the server side.
 Currently, the `Server` class utilizes `asyncio`, while the `Client` class is synchronous/blocking. In the future, we may implement asynchronous `Client` functionality and a thread-based `Server`.
 
-The `Server` employs `asyncio` for efficient handling of concurrent connections. The `Client`, on the other hand, operates synchronously/blocking in its current implementation. In future updates, we aim to implement asynchronous client functionality and a thread-based server design to improve performance and efficiency.
+## Notice
+The Server uses asyncio for efficient handling of concurrent connections. On the other hand, the Client currently operates in a synchronous/blocking manner "for easier integration into existing code." In future updates, we plan to introduce asynchronous capabilities to the client and adopt a thread-based design for the server to enhance performance and efficiency.
