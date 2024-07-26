@@ -7,17 +7,12 @@ def fake_flame(path, **kwargs):
     
     topic = "flame"
     fps = kwargs['fps']
-    send_fps = kwargs['send_fps']
+    generate_fps = kwargs['generate_fps']
     loop = kwargs['loop']
     files = list(os.listdir(path))
     files.sort()
     start = time.time()
-    
-    socket = Client(topic)
-    socket.send_json({
-        "fps": fps
-    })
-    print(f"meta sent")
+    socket = Client(topic, fps=fps)
 
     while True:
         for frameId, file in enumerate(files):
@@ -27,11 +22,11 @@ def fake_flame(path, **kwargs):
             socket.send_npz(exp_code=exp_code, flame_pose_params=flame_pose_params)
             now = time.time()
             print(f"[Flame] {now - start:.2f} flame send frameId {frameId} (+{frameId / fps:5.2f})")
-            time.sleep(max(0, start + frameId / send_fps - now))
+            time.sleep(max(0, start + frameId / generate_fps - now))
             
         if not loop:
             break
 
 if __name__ == "__main__":
-    fake_flame('./data/demo_flame', fps=4, send_fps=5, loop=True)
+    fake_flame('./data/demo_flame', fps=3, generate_fps=4, loop=True)
     

@@ -3,7 +3,7 @@ import zmq
 import zmq.asyncio
 from typing import *
 
-from . import EASYCONNECTS_HOST, EASYCONNECTS_PORT
+from easyconnects import EASYCONNECTS_HOST, EASYCONNECTS_PORT
 class Server:
     def __init__(self):
         self.__tasks: Dict[str, asyncio.Task] = {}
@@ -21,7 +21,10 @@ class Server:
         
         while True:
             try:
-                name = await self.__endpoint_socket.recv_string()
+                meta = await self.__endpoint_socket.recv_json()
+                if "name" not in meta:
+                    raise ValueError(f"meta must contains 'name'")
+                name = meta["name"]
                 if not hasattr(self, f"handle_{name}"):
                     raise ValueError(f"Handler for {name} not implemented")
                 
@@ -37,7 +40,7 @@ class Server:
                 if name in self.sockets:
                     self.sockets[name].close()
                 
-                self.__tasks[name] = asyncio.create_task(handle(socket))
+                self.__tasks[name] = asyncio.create_task(handle(socket, meta))
                 self.sockets[name] = socket
                 self.__endpoint_socket.send(endpoint)
                 print(f"{name} connected at {endpoint.decode('ascii')}")
