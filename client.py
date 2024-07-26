@@ -1,37 +1,32 @@
+# Import the necessary module
 from easyconnects import Client
 
-# Client must specify an unique name.
+# Create a client object with a unique name for identification
 alice = Client("alice")
-# another_alice = Client("alice")
-# This will override the first alice. 
-
-# Client can carry kwargs as metadata.
-# metadata will send to server.
+# Additional metadata can be sent as keyword arguments to the server
 bob = Client("bob", key1=1, key2="2", key3=[3, 4, 5])
+# A more recent client with the same name will override the older one.
+# P.S. you may not want to do that explicitly. This is for reconnection.
+alice = Client("alice", alice="new")
 
-# Client can send messages
+# Clients can send and receive string messages.
 alice.send_string("test string")
-# And also recieve
 print(bob.recv_string())
 
-# Besides string, message can be bytes
-alice.send(b"\xDE\xAD\xBE\xEF")
-print(bob.recv())
+# Clients can also send and receive raw bytes.
+bob.send(b"\xDE\xAD\xBE\xEF")
+print(alice.recv())
 
-# ... or json
+# Json-serializable objects
 alice.send_json({"This is": "a dict"})
 print(bob.recv_json())
 
-# ... or npz, 
-# follows the same api of np.savez() and np.load() 
-# but without fd
+# And non-json-serializable objects
+bob.send_pyobj(set([1, '2']))
+print(alice.recv_pyobj())
+
+# In addition, we provide an interface that acts similar to np.savez()/np.load()
 import numpy as np
 alice.send_npz(mat=np.eye(5), arr=np.random.normal(size=10))
 npz = bob.recv_npz()
 print(npz['mat'], npz['arr'])
-
-# ... or any python object that cannot be json serialize/deserialized.
-# uses pickle behind the scene.
-alice.send_pyobj(set([1, '2']))
-print(bob.recv_pyobj())
-
