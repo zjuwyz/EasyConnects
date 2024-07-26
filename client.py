@@ -1,11 +1,12 @@
-# Import the necessary module
 from easyconnects import Client
 
 # Create a client object with a unique name for identification
 alice = Client("alice")
+
 # Additional metadata can be sent as keyword arguments to the server
 bob = Client("bob", key1=1, key2="2", key3=[3, 4, 5])
-# A more recent client with the same name will override the older one.
+
+# A recent client with the same name will override the old one.
 # P.S. you may not want to do that explicitly. This is for reconnection.
 alice = Client("alice", alice="new")
 
