@@ -1,5 +1,4 @@
 # EasyConnects - A Socket Utility Module
-EasyConnects is a simple and lightweight Python module that provides a socket server utility, facilitating communication between different components of your application. It uses the ZeroMQ library for efficient and reliable messaging.
 EasyConnects is a simple and lightweight Python module that provides a socket server utility, making communication between different components of your application easy. It uses the ZeroMQ library for efficient and reliable messaging.
 
 ## Installation
