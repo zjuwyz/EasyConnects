@@ -30,7 +30,7 @@ alice.send_npz(mat=np.eye(5), arr=np.random.normal(size=10))
 npz = bob.recv_npz()
 print(npz['mat'], npz['arr'])
 
-# or pyobj, uses pickle behind the scene.
+# ... or pyobj, uses pickle behind the scene.
 alice.send_pyobj(set([1, '2']))
 print(bob.recv_pyobj())
 
