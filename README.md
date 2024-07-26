@@ -38,15 +38,11 @@ In this example, handle_my_service is a coroutine that handles the communication
 ### Client
 ```Python
 from easyconnects import Client
-import asyncio
 
-async def main():
-    # You can pass additional information using keyword arguments (kwargs)
-    client = Client("my_service", user="Alice", role="admin")
-    await client.send_json({"message": "Hello, Server!"})
+# You can pass additional information using keyword arguments (kwargs)
+client = Client("my_service", user="Alice", role="admin")
+client.send_json({"message": "Hello, Server!"})
 
-if __name__ == "__main__":
-    asyncio.run(main())
 ```
 In this example, the client is connecting to a service named "my_service". It sends a JSON message to the server using send_json. The additional information (user and role) is sent as keyword arguments when creating the Client instance and can be accessed on the server side.
 Currently, the `Server` class utilizes `asyncio`, while the `Client` class is synchronous/blocking. In the future, we may implement asynchronous `Client` functionality and a thread-based `Server`.
