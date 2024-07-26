@@ -4,7 +4,7 @@ EasyConnects is a simple and lightweight Python module that provides a socket se
 
 ## Installation
 You can install EasyConnects using pip from GitHub:
-```
+
 
 ```
 pip install git+https://github.com/wangyize/easyconnects.git#egg=easyconnects
