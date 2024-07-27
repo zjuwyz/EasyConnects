@@ -6,7 +6,7 @@ import zmq.asyncio
 # A sample server that transfers data between alice and bob.
 # Queueing message if one side is offline.
 class SampleServer(Server):
-q
+
     # Using two queues for tunneling data between clients: Alice and Bob
     alice_queue = asyncio.Queue()
     bob_queue = asyncio.Queue()
