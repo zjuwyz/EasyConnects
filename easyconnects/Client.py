@@ -8,7 +8,7 @@ from easyconnects import EASYCONNECTS_HOST, EASYCONNECTS_PORT
 
 class Socket(zmq.Socket):
     def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
+        super().__init__(*args, **kwargs)
         
     def send_npz(self, *args, **kwargs):
         import numpy as np
