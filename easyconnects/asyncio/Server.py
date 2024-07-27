@@ -60,7 +60,7 @@ class Server:
                     raise ValueError(f"Handler for {name} not implemented")
                 
                 socket = Socket(self.context, zmq.PAIR)
-                socket.bind(f"tcp://*:0")
+                socket.bind(f"tcp://{EASYCONNECTS_HOST}:0")
                 endpoint = socket.getsockopt(zmq.LAST_ENDPOINT)
                 endpoint.decode('ascii')
                 handle = getattr(self, f"handle_{name}")
