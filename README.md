@@ -7,7 +7,7 @@ EasyConnects is a simple and lightweight Python module that provides a socket se
 ```bash
 git clone https://github.com/zjuwyz/easyconnects.git
 cd easyconnects
-pip install .
+pip install -e .
 ```
 ## Usage
 see `server.py` and `client.py`

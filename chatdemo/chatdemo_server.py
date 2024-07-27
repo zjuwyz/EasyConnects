@@ -4,7 +4,7 @@ import zmq.asyncio
 import argparse
 import time
 import queue
-from easyconnects import Server
+from easyconnects.asyncio import Server, Socket
 from collections import deque
 import json
 from typing import *
@@ -18,7 +18,7 @@ class Clock():
     
     def reset_time(self, offset=0):
         self.zero_time = time.time() - offset
-        
+    
 class ChatdemoServer(Server):
     def __init__(self):
         super().__init__()
@@ -31,7 +31,7 @@ class ChatdemoServer(Server):
         self.render_ready = False
         self.meta: Dict[str, Dict] = {}
     
-    async def handle_talkshow(self, socket: zmq.asyncio.Socket, meta):
+    async def handle_talkshow(self, socket: Socket, meta):
 
         fps = meta['fps']
         frameId = 0
@@ -46,7 +46,7 @@ class ChatdemoServer(Server):
         socket.close()
         self.talkshow_input_finished = True
             
-    async def handle_flame(self, socket: zmq.asyncio.Socket, meta):
+    async def handle_flame(self, socket: Socket, meta):
 
         fps = meta["fps"]
         frameId = 0
@@ -57,13 +57,8 @@ class ChatdemoServer(Server):
             await self.flame_queue.put((obj, frameId / fps))
             print(f"[Server] handle flame\t put frameId {frameId} time {frameId / fps:5.2f}")
             frameId += 1
-            
-    # async def handle_audio(self, socket: zmq.asyncio.Socket):
-    #     while True:
-    #         clip = await socket.recv()
-    #         await self.audio_queue.put(clip)
     
-    async def handle_easyvolcap(self, socket: zmq.asyncio.Socket, meta):
+    async def handle_easyvolcap(self, socket: Socket, meta):
         
         has_timestamp = meta['has_timestamp'] if 'has_timestamp' in meta else False
         last_pose = None
@@ -93,6 +88,46 @@ class ChatdemoServer(Server):
                     "flame_time": flame_time,
             })
 
+    async def handle_microphone(self, socket: Socket, meta):
+        input_audio = queue.Queue()
+        while True:
+            audio = await socket.recv()
+            input_audio.put(audio)
+            if 'whisper' in self.sockets:
+                whisper = self.sockets['whisper']
+                while not input_audio.empty():
+                    whisper.send(input_audio.get())
+                    
+    async def handle_whisper(self, socket: Socket, meta):
+        input_text = queue.Queue()
+        while True:
+            text = await socket.recv_string()
+            input_text.put(text)
+            if 'llm' in self.sockets:
+                llm = self.sockets['llm']
+                while not input_text.empty():
+                    llm.send_string(llm)
+                    
+    async def handle_llm(self, socket: Socket, meta):
+        input_text = queue.Queue()
+        while True:
+            text = await socket.recv_string()
+            input_text.put(text)
+            if 'chattts' in self.sockets:
+                chattts = self.sockets['chattts']
+                while not input_text.empty():
+                    chattts.send_string(chattts)
+            
+    async def handle_chattts(self, socket: Socket, meta):
+        input_text = queue.Queue()
+        while True:
+            text = await socket.recv_string()
+            input_text.put(text)
+            if 'speaker' in self.sockets:
+                chattts = self.sockets['speaker']
+                while not input_text.empty():
+                    chattts.send_string(chattts)        
+    
 async def main():
     parser = argparse.ArgumentParser(description='Start an asyncio socket server.')
     parser.add_argument('--dump', type=bool, help='whether or not to dump all traffic to disk')
@@ -102,8 +137,6 @@ async def main():
     await server.serve()
             
     
-if __name__ == "__main__":
-    
+if __name__ == "__main__":    
     asyncio.run(main())
-
 

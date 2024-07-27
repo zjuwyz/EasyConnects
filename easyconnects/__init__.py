@@ -1,5 +1,5 @@
 EASYCONNECTS_PORT = 12000
-EASYCONNECTS_HOST = "localhost"
+EASYCONNECTS_HOST = "10.76.2.117"
 
 from .Client import Client
-from .Server import Server
+from .Socket import Socket
