@@ -50,3 +50,5 @@ class Client(Socket):
         print(f"Client {name} received endpoint: {endpoint}")
         super().__init__(zmq.Context.instance(), zmq.PAIR)
         self.connect(endpoint)
+        self.send_string("echo")
+        self.recv_string()

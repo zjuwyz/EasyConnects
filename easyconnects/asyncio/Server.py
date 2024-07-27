@@ -74,6 +74,8 @@ class Server:
                 self.__tasks[name] = asyncio.create_task(handle(socket, meta))
                 self.sockets[name] = socket
                 await self.endpoint_socket.send(endpoint)
+                socket.recv_string()
+                socket.send_string("echo")
                 print(f"{name} connected at {endpoint.decode('ascii')}")
                 
             except ValueError as e:
