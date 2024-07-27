@@ -12,7 +12,7 @@ import io
 
 class Socket(zmq.asyncio.Socket):
     def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
+        super().__init__(*args, **kwargs)
         
     async def send_npz(self, *args, **kwargs):
         import numpy as np
