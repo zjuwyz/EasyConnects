@@ -14,6 +14,10 @@ def fake_easyvolcap(render_fps, has_timestamp: bool):
         
         pose = client.recv_json()
         flame = client.recv_npz()
+
+        exp_code = flame['exp_code']
+        flame_pose_params = flame['flame_pose_params']
+        # do your work here
         obj = {
             "pose_time": "n/a",
             "flame_time": "n/a"
@@ -24,10 +28,6 @@ def fake_easyvolcap(render_fps, has_timestamp: bool):
         pose_time = obj["pose_time"]
         flame_time = obj["flame_time"]
                     
-        exp_code = flame['exp_code']
-        flame_pose_params = flame['flame_pose_params']
-        # do your work here
-        
         now = time.time()
         print(f"reltime: +{now - start:.2f}, smpl: +{pose_time:5.2f}, flame: +{flame_time:5.2f}, exp_code: {exp_code.shape}, flame_pose_params: {flame_pose_params.shape}")
         render_frameId += 1

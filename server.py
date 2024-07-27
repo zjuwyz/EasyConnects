@@ -1,5 +1,5 @@
 import asyncio
-from easyconnects import Server
+from easyconnects.asyncio import Server, Socket
 import zmq
 import zmq.asyncio
 
@@ -12,7 +12,7 @@ class SampleServer(Server):
     bob_queue = asyncio.Queue()
 
     @staticmethod
-    async def _handle_client(socket: zmq.asyncio.Socket, meta, queue_in: asyncio.Queue, queue_out: asyncio.Queue):
+    async def _handle_client(socket: Socket, meta, queue_in: asyncio.Queue, queue_out: asyncio.Queue):
         print(f"Client connected with meta: {meta}")
 
         async def send_message():
@@ -30,11 +30,11 @@ class SampleServer(Server):
         await asyncio.gather(send_task, recv_task)
 
     @staticmethod
-    async def handle_alice(socket: zmq.asyncio.Socket, meta):
+    async def handle_alice(socket: Socket, meta):
         await SampleServer._handle_client(socket, meta, SampleServer.alice_queue, SampleServer.bob_queue)
 
     @staticmethod
-    async def handle_bob(socket: zmq.asyncio.Socket, meta):
+    async def handle_bob(socket: Socket, meta):
         await SampleServer._handle_client(socket, meta, SampleServer.bob_queue, SampleServer.alice_queue)
 
 async def main():
