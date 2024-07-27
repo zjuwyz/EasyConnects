@@ -47,7 +47,7 @@ class Server:
     async def serve(self):
         self.context = zmq.asyncio.Context.instance()
         self.endpoint_socket = self.context.socket(zmq.REP)
-        self.endpoint_socket.bind(f"tcp://{EASYCONNECTS_HOST}:{EASYCONNECTS_PORT}")
+        self.endpoint_socket.bind(f"tcp://*:{EASYCONNECTS_PORT}")
         print(f"Server listening on {self.endpoint_socket.getsockopt(zmq.LAST_ENDPOINT).decode('ascii')}")
         
         while True:
