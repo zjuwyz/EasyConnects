@@ -2,6 +2,7 @@ import zmq
 from typing import Dict, Any
 import io
 import threading
+from zmq.utils.monitor import recv_monitor_message
 
 # Assuming EASYCONNECTS_HOST and EASYCONNECTS_PORT are defined in the same file or imported from another module
 from easyconnects import EASYCONNECTS_HOST, EASYCONNECTS_PORT
@@ -46,15 +47,7 @@ class Client(Socket):
     def __init__(self, name: str, **kwargs: Dict[str, Any]):
         kwargs["name"] = name
         context = zmq.Context.instance()
-        super().__init__(zmq.Context.instance(), zmq.PAIR)
-        # Setup monitor thread
-        monitor_url = f"inproc://monitor-{name}"
-        monitor_socket: zmq.Socket = context.socket(zmq.PAIR)
-        monitor_socket.connect(monitor_url)
-        threading.Thread(target=self.monitor_loop, args=(monitor_socket, kwargs)).start()
-        self.monitor(monitor_url, zmq.EVENT_CONNECTED | zmq.EVENT_DISCONNECTED)
-        self.__dict__['connected_event'] = None
-        self.connected_event = threading.Event()
+
         # Connect to meta socket
         meta_socket: zmq.Socket = context.socket(zmq.REQ)
         meta_socket.connect(f"tcp://{EASYCONNECTS_HOST}:{EASYCONNECTS_PORT}")
@@ -62,23 +55,10 @@ class Client(Socket):
         endpoint = meta_socket.recv_string()
         meta_socket.close()
         if endpoint.startswith("Error"):  raise ValueError(f"Error: {endpoint}")
-        # Confirm connection to server
+        # Confirm connection to server by sending meta.
         self.connect(endpoint)
-        self.connected_event.wait()
-        
-        
-    def monitor_loop(self, socket: Socket, meta):
-
-        while True:
-            event_type, event_val = socket.recv_multipart()
-            if event_type == zmq.EVENT_CONNECTED:
-                print("Connected to server.")
-                self.send_pyobj(meta)
-                self.connected_event.set()
-                
-            elif event_type == zmq.EVENT_DISCONNECTED:
-                print(f"Disconencted from server")
-                
+        self.send_pyobj(kwargs)
+        self.recv()
         
     def close(self):
         self.send_string("exit")
