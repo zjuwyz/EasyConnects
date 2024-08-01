@@ -3,17 +3,16 @@ import os
 from typing import *
 import time
 import numpy as np
+import zmq
 def fake_flame(path, **kwargs):
     
     topic = "flame"
     fps = kwargs['fps']
     generate_fps = kwargs['generate_fps']
-    loop = kwargs['loop']
     files = list(os.listdir(path))
     files.sort()
     start = time.time()
     socket = Client(topic, fps=fps)
-
     while True:
         for frameId, file in enumerate(files):
             flame = np.load(os.path.join(path, file))
@@ -23,10 +22,9 @@ def fake_flame(path, **kwargs):
             now = time.time()
             print(f"[Flame] {now - start:.2f} flame send frameId {frameId} (+{frameId / fps:5.2f})")
             time.sleep(max(0, start + frameId / generate_fps - now))
+        socket.send(b'')
+        time.sleep(5)
             
-        if not loop:
-            break
-
 if __name__ == "__main__":
-    fake_flame('./data/demo_flame', fps=3, generate_fps=4, loop=True)
+    fake_flame('./data/demo_flame', fps=3, generate_fps=4)
     
