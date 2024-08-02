@@ -34,8 +34,8 @@ chunk_id = 0
 import time
 while True:
     client.send(b'')
-    wav, sr = client.recv_pyobj()
+    wav, sr, expire_time = client.recv_pyobj()
     wav_queue.put(wav)
-    print(f"received chunk {chunk_id}")
+    print(f"received chunk {chunk_id} expire_time {expire_time:5.2f}")
     chunk_id += 1
     time.sleep(duration / 10)
