@@ -11,7 +11,7 @@ def fake_talkshow(path, **kwargs):
     generate_fps = kwargs['generate_fps']
     segs = list(os.listdir(path))
     segs.sort(key=lambda s: int(s))
-    client = Client(topic, fps=fps)
+    client = Client(topic, fps=fps, sr=22000)
     
     for seg in segs:
         start = time.time()

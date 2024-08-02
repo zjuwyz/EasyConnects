@@ -127,24 +127,33 @@ class ChatdemoServer(Server):
         speaker_chunk_size = self.meta_by_name['speaker']['blocksize']
         speaker_sr = self.meta_by_name['speaker']['sr'] 
         speaker_lat = self.meta_by_name['speaker']['latency']
+        
+        talkshow_sr = self.meta_by_name['talkshow']['sr']
+        flame_sr = self.meta_by_name['flame']['sr']
         self.rqg.set_latency('chattts', speaker_lat)
+        
+        def resample(wav_tensor, orig_sr, target_sr):
+            import torchaudio as ta
+            resampler = ta.transforms.Resample(orig_freq=orig_sr, new_freq=target_sr).to(device)
+            ret = resampler(wav_tensor).cpu().numpy()[0]
+            return ret
         
         while True:
             wav, sr = await socket.recv_pyobj()
             print(f"chattts recieved wav, length {len(wav)}")
-
-            await self.socket_by_name['talkshow'].send_pyobj([wav, sr])
-            await self.socket_by_name['flame'].send_pyobj([wav, sr])
-
-            # 有必要的话 resample 一下
-            # TODO: 直接通知 speaker 用 chattts 的 sr
-            if sr != speaker_sr:
-                import librosa
-                wav = librosa.resample(wav, orig_sr=sr, target_sr=speaker_sr)
-            # 然后把 wav 切成 chunk，每个 chunk 放进队列里面。
-            # 注意时间要传到期时间
-            for i in range(0, len(wav), speaker_chunk_size):
-                await self.rqg.put('chattts', [wav[i:i+speaker_chunk_size], speaker_sr], (i + speaker_chunk_size) / speaker_sr)
+            import torch
+            device = 'cuda'
+            wav_tensor = torch.from_numpy(wav).reshape(1, -1).to(device)
+            
+            talkshow_resample_task = asyncio.create_task(asyncio.to_thread(resample, wav_tensor, orig_sr=sr, target_sr=talkshow_sr))
+            flame_resample_task = asyncio.create_task(asyncio.to_thread(resample, wav_tensor, orig_sr=sr, target_sr=flame_sr))
+            speaker_resample_task = asyncio.create_task(asyncio.to_thread(resample, wav_tensor, orig_sr=sr, target_sr=speaker_sr))
+            await self.socket_by_name['talkshow'].send_pyobj([await talkshow_resample_task, talkshow_sr])
+            await self.socket_by_name['flame'].send_pyobj([await flame_resample_task, flame_sr])
+            
+            speaker_wav = await speaker_resample_task
+            for i in range(0, len(speaker_wav), speaker_chunk_size):
+                await self.rqg.put('chattts', [speaker_wav[i:i+speaker_chunk_size], speaker_sr], (i + speaker_chunk_size) / speaker_sr)
             
             # 结束之后传个空的进去，在 speaker 里处理
             print("chattts wav done")

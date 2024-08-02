@@ -11,7 +11,7 @@ def fake_flame(path, **kwargs):
     generate_fps = kwargs['generate_fps']
     segs = list(os.listdir(path))
     segs.sort(key=lambda x: int(x))
-    client = Client(topic, fps=fps)
+    client = Client(topic, fps=fps, sr=16000)
     
     for seg in segs:
         start = time.time()

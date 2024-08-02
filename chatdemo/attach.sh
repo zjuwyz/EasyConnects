@@ -2,7 +2,7 @@ while :
 do
     tmux has-session -t test 2>/dev/null
     if [ $? = 0 ]; then
-        tmux attach-session -t test
+        tmux -u attach-session -t test
         sleep 1
     else
         echo "Session 'test' does not exist. Trying again"
