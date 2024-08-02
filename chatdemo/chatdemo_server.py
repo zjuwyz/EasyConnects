@@ -222,9 +222,8 @@ class ChatdemoServer(Server):
 async def main():
     parser = argparse.ArgumentParser(description='Start an asyncio socket server.')
     parser.add_argument('--dump', type=bool, help='whether or not to dump all traffic to disk')
-    parser.add_argument('--init_pose', type=str, default='data/init.json', help='Path to the empty pose to send to renderer if pipeline is not ready')
-    parser.add_argument('--init_flame', type=str, default='data/init.npz', help='Path to the empty flame to send to renderer if pipeline is not ready')
-    parser.add_argument('--init_chattts', type=str, default='data/empty_wav.npz', help='Path to the empty audio to send to speaker if pipeline is not ready')
+    parser.add_argument('--init_pose', type=str, default='init.json', help='Path to the empty pose to send to renderer if pipeline is not ready')
+    parser.add_argument('--init_flame', type=str, default='init.npz', help='Path to the empty flame to send to renderer if pipeline is not ready')
     args = parser.parse_args()
 
     server = ChatdemoServer(args)
