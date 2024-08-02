@@ -9,15 +9,19 @@ import time
 
 def fake_chattts(path, **kwargs):
     topic = "chattts"
-    print("loading file")
-    wav, sr = librosa.load(path, sr=None)
-    print("loaded")
+    segs = list(os.listdir(path))
+    segs.sort(key=lambda x: int(x))
     client=Client(topic)
-    while True:
+    
+    for seg in segs:
+        print(f"seg {seg} loading file")
+        npz = np.load(os.path.join(path, seg, 'audio.npz'), allow_pickle=True)
+        wav, sr = npz['wav'], npz['sr']
+        print(f"loaded wav length {wav.shape[0] / sr}")
         client.send_pyobj([wav, sr])
-        print("client send npz")
+        print("wav sent")
         time.sleep(len(wav)/sr + 5) 
         
 if __name__ == "__main__":
-    fake_chattts('./data/0703_1_sync.mp3')
+    fake_chattts('data_segs')
     

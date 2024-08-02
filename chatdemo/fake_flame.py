@@ -9,23 +9,31 @@ def fake_flame(path, **kwargs):
     topic = "flame"
     fps = kwargs['fps']
     generate_fps = kwargs['generate_fps']
-    files = list(os.listdir(path))
-    files.sort()
-    start = time.time()
-    socket = Client(topic, fps=fps)
-    while True:
+    segs = list(os.listdir(path))
+    segs.sort(key=lambda x: int(x))
+    client = Client(topic, fps=fps)
+    
+    for seg in segs:
+        start = time.time()
+        files = list(os.listdir(os.path.join(path, seg, 'flame')))
+        files.sort()
+        print(f"[Flame] waiting seg {seg} input from chattts")
+        client.recv()
+        print(f"[Flame] inferenceing seg {seg}")
+        time.sleep(8)
+        print(f"[Flame] inferenceing seg {seg} done")
+
         for frameId, file in enumerate(files):
-            flame = np.load(os.path.join(path, file))
+            flame = np.load(os.path.join(path, seg, 'flame', file))
             exp_code = flame['exp_code']
             flame_pose_params = flame['flame_pose_params']
-            socket.send_npz(exp_code=exp_code, flame_pose_params=flame_pose_params)
-            socket.recv()
+            client.send_npz(exp_code=exp_code, flame_pose_params=flame_pose_params)
+            client.recv()
             now = time.time()
             print(f"[Flame] {now - start:.2f} flame send frameId {frameId} (+{frameId / fps:5.2f})")
             time.sleep(max(0, start + frameId / generate_fps - now))
-        socket.send(b'')
-        time.sleep(5)
+        client.send(b'')
             
 if __name__ == "__main__":
-    fake_flame('./data/demo_flame', fps=30, generate_fps=40)
+    fake_flame('./data_segs', fps=30, generate_fps=40)
     

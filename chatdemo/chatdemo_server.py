@@ -27,9 +27,10 @@ class RealtimeQueueGroup:
         # TODO: 实际上 latency 不应该是 per-queue 的，而应该是 per-consumer 的
         # 但动这个意味着时间线不是唯一的 time.time() 了，要大改整个类，目前没必要。
         
-        self.queues: Dict[str, asyncio.Queue] = {name: asyncio.Queue(maxsize=10) for name in names}
+        self.queues: Dict[str, asyncio.Queue] = {name: asyncio.Queue() for name in names}
         self.latest: Dict[str, Tuple[Any, float]] = {name: (init_obj, math.inf) for name, init_obj in zip(names, init_objs)}
         self.latencies: Dict[str, float] = {name: l for name, l in zip(names, latencies)}
+        self.lock = asyncio.Lock()
         self._update_offsets()
         self._reset_time()
     
@@ -42,6 +43,8 @@ class RealtimeQueueGroup:
         
     def _reset_time(self):
         self.zero_time = time.time()
+
+
 
     async def _next_obj(self, name):
         # 从队列中取元素，同时维护 self.latest。
@@ -69,29 +72,30 @@ class RealtimeQueueGroup:
     async def put(self, name: str, obj: Any, expire_time: float):
         # 给 name 队列放一个对象和它的有效期。如果时间戳为 math.inf，那就说明整个 session 结束了。
         # 这个对象的有效期的结束就是下一个对象有效期的开始。
-        # 有效期添加一个偏移量，用于抵消下游的延迟。
+    # 有效期添加一个偏移量，用于抵消下游的延迟。
         if name not in self.queues: raise ValueError(f"Unknown queue {name}")
         await self.queues[name].put((obj, expire_time + self.offsets[name]))
 
             
     async def get(self):
         # 如果所有 session 都结束了，并且下个 session 的数据也都来了，那么就重置时间戳，开始下个 session
-        if all([expire_time is math.inf for _, expire_time in self.latest.values()]): 
-            print("All session ended")
-            if all([q.qsize() > 0 for q in self.queues.values()]):
-                for name in self.queues.keys(): await self._next_obj(name)
-                self._reset_time()
-                
-        req_time = self._get_time()
-        # 不断取出最旧的元素，直到所有元素到期时间都在 req_time 之后。
-        # 如果 session 结束了，时间戳是 inf，自动排在所有 req_time 后面，
-        while True:
-            name, (_, expire_time) = min(self.latest.items(), key=lambda x: x[1][1])
-            # 带上等号可以处理 math.inf 的情况
-            if req_time <= expire_time: 
-                return self.latest
-            else:
-                await self._next_obj(name)
+        async with self.lock:
+            if all([expire_time == math.inf for _, expire_time in self.latest.values()]): 
+                if all([q.qsize() > 0 for q in self.queues.values()]):
+                    print("Next session")
+                    self._reset_time()
+                    for name in self.queues.keys(): await self._next_obj(name)
+                    
+            req_time = self._get_time()
+            # 不断取出最旧的元素，直到所有元素到期时间都在 req_time 之后。
+            # 如果 session 结束了，时间戳是 inf，自动排在所有 req_time 后面，
+            while True:
+                name, (_, expire_time) = min(self.latest.items(), key=lambda x: x[1][1])
+                # 带上等号可以处理 math.inf 的情况
+                if req_time <= expire_time: 
+                    return self.latest
+                else:
+                    await self._next_obj(name)
 
 
 class ChatdemoServer(Server):
@@ -118,7 +122,8 @@ class ChatdemoServer(Server):
         
     async def handle_chattts(self, socket: Socket, meta):
         await self.wait_ready('speaker')
-        
+        await self.wait_ready('talkshow')
+        await self.wait_ready('flame')
         speaker_chunk_size = self.meta_by_name['speaker']['blocksize']
         speaker_sr = self.meta_by_name['speaker']['sr'] 
         speaker_lat = self.meta_by_name['speaker']['latency']
@@ -126,12 +131,10 @@ class ChatdemoServer(Server):
         
         while True:
             wav, sr = await socket.recv_pyobj()
-            print("chattts recieved wav")
+            print(f"chattts recieved wav, length {len(wav)}")
 
-            if 'talkshow' in self.socket_by_name:
-                await self.socket_by_name['talkshow'].send_npz(wav=wav, sr=sr)
-            if 'flame' in self.socket_by_name:
-                await self.socket_by_name['flame'].send_npz(wav=wav, sr=sr)
+            await self.socket_by_name['talkshow'].send_npz(wav=wav, sr=sr)
+            await self.socket_by_name['flame'].send_npz(wav=wav, sr=sr)
 
             # 有必要的话 resample 一下
             # TODO: 直接通知 speaker 用 chattts 的 sr
@@ -141,7 +144,7 @@ class ChatdemoServer(Server):
             # 然后把 wav 切成 chunk，每个 chunk 放进队列里面。
             # 注意时间要传到期时间
             for i in range(0, len(wav), speaker_chunk_size):
-                await self.rqg.put('chattts', [wav[i:i+speaker_chunk_size], sr], (i + speaker_chunk_size) / sr)
+                await self.rqg.put('chattts', [wav[i:i+speaker_chunk_size], speaker_sr], (i + speaker_chunk_size) / speaker_sr)
             
             # 结束之后传个空的进去，在 speaker 里处理
             print("chattts wav done")
@@ -158,7 +161,8 @@ class ChatdemoServer(Server):
                 if not obj: break # session stop signal
                 await self.rqg.put('talkshow', obj, frameId / fps)
                 await socket.send(b'')
-                print(f"[Server] handle talkshow\t put frameId {frameId} session time {frameId / fps:5.2f}")
+                # print(f"[Server] handle talkshow\t put frameId {frameId} session time {frameId / fps:5.2f}")
+            print('talkshow session done')
             await self.rqg.put(name='talkshow', obj=None, expire_time=math.inf)
    
     async def handle_flame(self, socket: Socket, meta):
@@ -171,7 +175,8 @@ class ChatdemoServer(Server):
                 if not obj: break # session stop signal
                 await self.rqg.put('flame', obj, frameId / fps)
                 await socket.send(b'')
-                print(f"[Server] handle flame\t put frameId {frameId} session time {frameId / fps:5.2f}")
+                # print(f"[Server] handle flame\t put frameId {frameId} session time {frameId / fps:5.2f}")
+            print('flame session done')
             await self.rqg.put(name='flame', obj=None, expire_time=math.inf)
     
     async def handle_easyvolcap(self, socket: Socket, meta):
