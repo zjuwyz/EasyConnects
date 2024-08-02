@@ -1,8 +1,6 @@
 import zmq
 from typing import Dict, Any
 import io
-import threading
-from zmq.utils.monitor import recv_monitor_message
 
 # Assuming EASYCONNECTS_HOST and EASYCONNECTS_PORT are defined in the same file or imported from another module
 from easyconnects import EASYCONNECTS_HOST, EASYCONNECTS_PORT
@@ -56,9 +54,11 @@ class Client(Socket):
         meta_socket.close()
         if endpoint.startswith("Error"):  raise ValueError(f"Error: {endpoint}")
         # Confirm connection to server by sending meta.
+        super().__init__(context, zmq.PAIR)
         self.connect(endpoint)
         self.send_pyobj(kwargs)
         self.recv()
+        print("Server connected")
         
     def close(self):
         self.send_string("exit")

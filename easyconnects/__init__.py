@@ -1,5 +1,5 @@
 EASYCONNECTS_PORT = 12000
-EASYCONNECTS_HOST = "localhost"
+EASYCONNECTS_HOST = "10.76.2.117"
 
 from easyconnects.Client import Client, Socket
 EC_KNOWN_PORTS = {
