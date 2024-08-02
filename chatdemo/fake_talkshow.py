@@ -19,9 +19,9 @@ def fake_talkshow(path, **kwargs):
         files.sort()
         print(f"[Talkshow] waiting seg {seg} input from chattts")
         client.recv()
-        print(f"[Talkshow] inferenceing seg {seg}")
+        print(f"[Talkshow] inferencing seg {seg}")
         time.sleep(5)
-        print(f"[Talkshow] inferenceing seg {seg} done")
+        print(f"[Talkshow] inferencing seg {seg} done")
         for frameId, file in enumerate(files):
             fullpath = os.path.join(path, seg, 'pose', file)
             with open(fullpath, "r") as f:

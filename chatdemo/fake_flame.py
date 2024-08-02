@@ -19,9 +19,9 @@ def fake_flame(path, **kwargs):
         files.sort()
         print(f"[Flame] waiting seg {seg} input from chattts")
         client.recv()
-        print(f"[Flame] inferenceing seg {seg}")
+        print(f"[Flame] inferencing seg {seg}")
         time.sleep(8)
-        print(f"[Flame] inferenceing seg {seg} done")
+        print(f"[Flame] inferencing seg {seg} done")
 
         for frameId, file in enumerate(files):
             flame = np.load(os.path.join(path, seg, 'flame', file))
