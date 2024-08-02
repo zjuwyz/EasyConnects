@@ -6,3 +6,4 @@ __pycache__
 *.egg-info
 data
 data_segs
+chatdemo/run.sh
