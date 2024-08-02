@@ -27,10 +27,15 @@ class RealtimeQueueGroup:
         # TODO: 实际上 latency 不应该是 per-queue 的，而应该是 per-consumer 的
         # 但动这个意味着时间线不是唯一的 time.time() 了，要大改整个类，目前没必要。
         
-        self.queues: Dict[str, asyncio.Queue] = {name: asyncio.Queue() for name in names}
+        self.queues: Dict[str, asyncio.Queue] = {name: asyncio.Queue(maxsize=10) for name in names}
         self.latest: Dict[str, Tuple[Any, float]] = {name: (init_obj, math.inf) for name, init_obj in zip(names, init_objs)}
         self.latencies: Dict[str, float] = {name: l for name, l in zip(names, latencies)}
+        self._update_offsets()
         self._reset_time()
+    
+    def _update_offsets(self):
+        self.max_latency = max(self.latencies.values())
+        self.offsets: Dict[str, float] = {name: self.max_latency - lat for name, lat in self.latencies.items()}
         
     def _get_time(self):
         return time.time() - self.zero_time
@@ -59,18 +64,20 @@ class RealtimeQueueGroup:
     
     def set_latency(self, name: str, latency: float):
         self.latencies[name] = latency
+        self._update_offsets()
         
     async def put(self, name: str, obj: Any, expire_time: float):
         # 给 name 队列放一个对象和它的有效期。如果时间戳为 math.inf，那就说明整个 session 结束了。
         # 这个对象的有效期的结束就是下一个对象有效期的开始。
         # 有效期添加一个偏移量，用于抵消下游的延迟。
         if name not in self.queues: raise ValueError(f"Unknown queue {name}")
-        await self.queues[name].put((obj, expire_time + self.latencies[name]))
+        await self.queues[name].put((obj, expire_time + self.offsets[name]))
 
             
     async def get(self):
         # 如果所有 session 都结束了，并且下个 session 的数据也都来了，那么就重置时间戳，开始下个 session
         if all([expire_time is math.inf for _, expire_time in self.latest.values()]): 
+            print("All session ended")
             if all([q.qsize() > 0 for q in self.queues.values()]):
                 for name in self.queues.keys(): await self._next_obj(name)
                 self._reset_time()
@@ -92,21 +99,21 @@ class ChatdemoServer(Server):
     def __init__(self, args):
         super().__init__()
         self.args = args
-        with open(args.init_pose, 'r') as f:    
-            init_pose = json.load(f)
+        with open(args.init_pose, 'rb') as f:    
+            init_pose = f.read()
         with open(args.init_flame, 'rb') as f:
-            init_flame = np.load(f)
+            init_flame = f.read()
         
-        # self.rqg = RealtimeQueueGroup(
-        #     names=['talkshow', 'flame', 'chattts'], 
-        #     init_objs=[init_pose, init_flame, empty_wav], 
-        #     buffer=0.1
-        # )
         self.rqg = RealtimeQueueGroup(
-            names=['chattts'], 
-            init_objs=[[None, None]],
-            latencies=[0.1]
+            names=['talkshow', 'flame', 'chattts'], 
+            init_objs=[init_pose, init_flame, [None, None]], 
+            latencies=[0, 0, 0.5]
         )
+        # self.rqg = RealtimeQueueGroup(
+        #     names=['chattts'], 
+        #     init_objs=[[None, None]],
+        #     latencies=[0.1]
+        # )
         
         
     async def handle_chattts(self, socket: Socket, meta):
@@ -150,6 +157,7 @@ class ChatdemoServer(Server):
                 obj = await socket.recv()
                 if not obj: break # session stop signal
                 await self.rqg.put('talkshow', obj, frameId / fps)
+                await socket.send(b'')
                 print(f"[Server] handle talkshow\t put frameId {frameId} session time {frameId / fps:5.2f}")
             await self.rqg.put(name='talkshow', obj=None, expire_time=math.inf)
    
@@ -162,6 +170,7 @@ class ChatdemoServer(Server):
                 obj = await socket.recv()
                 if not obj: break # session stop signal
                 await self.rqg.put('flame', obj, frameId / fps)
+                await socket.send(b'')
                 print(f"[Server] handle flame\t put frameId {frameId} session time {frameId / fps:5.2f}")
             await self.rqg.put(name='flame', obj=None, expire_time=math.inf)
     
@@ -171,13 +180,13 @@ class ChatdemoServer(Server):
             await socket.recv() # 新一帧请求
             latest = await self.rqg.get()
             pose, flame = latest['talkshow'], latest['flame']
-            await socket.send_json(pose[0], zmq.SNDMORE)
-            await socket.send_npz(flame[0])
+            await socket.send(pose[0], zmq.SNDMORE)
+            await socket.send(flame[0])
             
             if (has_timestamp):
                 await socket.send_json({
-                    "pose_time": pose[1],
-                    "flame_time": flame[1],
+                    "pose_time": pose[1] - self.rqg.offsets['talkshow'],
+                    "flame_time": flame[1] - self.rqg.offsets['flame'],
             })
             
     async def handle_speaker(self, socket: Socket, meta):
@@ -191,7 +200,7 @@ class ChatdemoServer(Server):
                 (wav, _), expire_time = (await self.rqg.get())['chattts']
                 if expire_time != last_expire_time:
                     last_expire_time = expire_time
-                    await socket.send_pyobj([wav, sr])
+                    await socket.send_pyobj([wav, sr, expire_time - self.rqg.offsets['chattts']])
                     break
                 await asyncio.sleep(blocksize / sr / 2)
     

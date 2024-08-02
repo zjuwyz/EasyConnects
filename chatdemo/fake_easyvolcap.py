@@ -4,7 +4,6 @@ from easyconnects import Client
 def fake_easyvolcap(render_fps, has_timestamp: bool):
     
     topic = "easyvolcap"
-    start = time.time()
     render_frameId = 0
     
     client = Client(topic, has_timestamp=has_timestamp)
@@ -28,10 +27,9 @@ def fake_easyvolcap(render_fps, has_timestamp: bool):
         pose_time = obj["pose_time"]
         flame_time = obj["flame_time"]
                     
-        now = time.time()
-        print(f"reltime: +{now - start:.2f}, smpl: +{pose_time:5.2f}, flame: +{flame_time:5.2f}, exp_code: {exp_code.shape}, flame_pose_params: {flame_pose_params.shape}")
+        print(f"smpl: +{pose_time:5.2f}, flame: +{flame_time:5.2f}, exp_code: {exp_code.shape}, flame_pose_params: {flame_pose_params.shape}")
         render_frameId += 1
-        time.sleep(max(0, start + render_frameId / render_fps - now))
+        time.sleep(1 / render_fps)
     
 if __name__ == "__main__":
-    fake_easyvolcap(render_fps=30, has_timestamp=True)
+    fake_easyvolcap(render_fps=50, has_timestamp=True)

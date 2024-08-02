@@ -19,6 +19,7 @@ def fake_flame(path, **kwargs):
             exp_code = flame['exp_code']
             flame_pose_params = flame['flame_pose_params']
             socket.send_npz(exp_code=exp_code, flame_pose_params=flame_pose_params)
+            socket.recv()
             now = time.time()
             print(f"[Flame] {now - start:.2f} flame send frameId {frameId} (+{frameId / fps:5.2f})")
             time.sleep(max(0, start + frameId / generate_fps - now))
