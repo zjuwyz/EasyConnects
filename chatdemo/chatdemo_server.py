@@ -133,8 +133,8 @@ class ChatdemoServer(Server):
             wav, sr = await socket.recv_pyobj()
             print(f"chattts recieved wav, length {len(wav)}")
 
-            await self.socket_by_name['talkshow'].send_npz(wav=wav, sr=sr)
-            await self.socket_by_name['flame'].send_npz(wav=wav, sr=sr)
+            await self.socket_by_name['talkshow'].send_pyobj([wav, sr])
+            await self.socket_by_name['flame'].send_pyobj([wav, sr])
 
             # 有必要的话 resample 一下
             # TODO: 直接通知 speaker 用 chattts 的 sr
@@ -160,7 +160,6 @@ class ChatdemoServer(Server):
                 obj = await socket.recv()
                 if not obj: break # session stop signal
                 await self.rqg.put('talkshow', obj, frameId / fps)
-                await socket.send(b'')
                 # print(f"[Server] handle talkshow\t put frameId {frameId} session time {frameId / fps:5.2f}")
             print('talkshow session done')
             await self.rqg.put(name='talkshow', obj=None, expire_time=math.inf)
@@ -174,7 +173,6 @@ class ChatdemoServer(Server):
                 obj = await socket.recv()
                 if not obj: break # session stop signal
                 await self.rqg.put('flame', obj, frameId / fps)
-                await socket.send(b'')
                 # print(f"[Server] handle flame\t put frameId {frameId} session time {frameId / fps:5.2f}")
             print('flame session done')
             await self.rqg.put(name='flame', obj=None, expire_time=math.inf)

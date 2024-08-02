@@ -23,7 +23,8 @@ tmux split-window -v
 
 tmux selectp -t 1
 tmux send-keys 'which python' C-m
-tmux send-keys "python chatdemo/fake_talkshow.py" C-m
+#tmux send-keys "python chatdemo/fake_talkshow.py" C-m
+tmux send-keys "chatdemo/talkshow.sh" C-m
 
 tmux selectp -t 2
 tmux send-keys 'which python' C-m

@@ -27,7 +27,6 @@ def fake_talkshow(path, **kwargs):
             with open(fullpath, "r") as f:
                 obj = json.load(f)        
             client.send_json(obj)
-            client.recv()
             now = time.time()
             print(f"[Talkshow] {now - start:.2f} talkshow send frameId {frameId} (+{frameId / fps:.2f})")
             time.sleep(max(0, start + frameId / generate_fps - now))

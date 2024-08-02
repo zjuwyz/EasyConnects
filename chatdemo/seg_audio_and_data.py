@@ -19,6 +19,9 @@ for seg_id, segment in enumerate(segments):
     os.makedirs(d + 'flame', exist_ok=True)
     with open(d + 'text.txt', 'w') as f:
         f.write(segment.text)
+    with open(d + 'audio.pkl', 'wb') as f:
+        import pickle
+        pickle.dump([wav_seg, sr], f)
     np.savez(d + 'audio.npz', wav=wav_seg, sr=sr)
     for i in range(file_seg_start, file_seg_stop):
         import shutil

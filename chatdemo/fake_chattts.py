@@ -15,8 +15,9 @@ def fake_chattts(path, **kwargs):
     
     for seg in segs:
         print(f"seg {seg} loading file")
-        npz = np.load(os.path.join(path, seg, 'audio.npz'), allow_pickle=True)
-        wav, sr = npz['wav'], npz['sr']
+        import pickle
+        with open(os.path.join(path, seg, 'audio.pkl'), 'rb') as f:
+            wav, sr = pickle.load(f)
         print(f"loaded wav length {wav.shape[0] / sr}")
         client.send_pyobj([wav, sr])
         print("wav sent")
