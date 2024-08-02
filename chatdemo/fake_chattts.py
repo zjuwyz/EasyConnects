@@ -16,7 +16,7 @@ def fake_chattts(path, **kwargs):
     while True:
         client.send_pyobj([wav, sr])
         print("client send npz")
-        time.sleep(len(wav)/sr + 5)
+        time.sleep(len(wav)/sr + 5) 
         
 if __name__ == "__main__":
     fake_chattts('./data/0703_1_sync.mp3')

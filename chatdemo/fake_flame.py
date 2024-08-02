@@ -26,5 +26,5 @@ def fake_flame(path, **kwargs):
         time.sleep(5)
             
 if __name__ == "__main__":
-    fake_flame('./data/demo_flame', fps=3, generate_fps=4)
+    fake_flame('./data/demo_flame', fps=30, generate_fps=40)
     

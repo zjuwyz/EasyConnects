@@ -34,4 +34,4 @@ def fake_easyvolcap(render_fps, has_timestamp: bool):
         time.sleep(max(0, start + render_frameId / render_fps - now))
     
 if __name__ == "__main__":
-    fake_easyvolcap(render_fps=4, has_timestamp=True)
+    fake_easyvolcap(render_fps=30, has_timestamp=True)

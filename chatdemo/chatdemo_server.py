@@ -31,12 +31,7 @@ class RealtimeQueueGroup:
         self.latest: Dict[str, Tuple[Any, float]] = {name: (init_obj, math.inf) for name, init_obj in zip(names, init_objs)}
         self.latencies: Dict[str, float] = {name: l for name, l in zip(names, latencies)}
         self._reset_time()
-        self._update_offsets()
         
-    def _update_offsets(self):
-        self.max_latency = max(self.latencies.values())
-        self.offsets: Dict[str, float] = {name: self.max_latency - l for name, l in self.latencies.items()}
-    
     def _get_time(self):
         return time.time() - self.zero_time
         
@@ -56,25 +51,24 @@ class RealtimeQueueGroup:
             obj = self.latest[name][0]
             
         # 特殊处理 session 开始的情况，0 到 offset 这段时间仍然沿用上个 session 的最后一个 obj
-        if self.latest[1] is math.inf:
+        if self.latest[name][1] is math.inf:
             obj = self.latest[name][0]
-            expire_time = self.offsets[name]
+            expire_time = self.latencies[name]
             
         self.latest[name] = (obj, expire_time)
     
-    async def set_latency(self, name: str, latency: float):
+    def set_latency(self, name: str, latency: float):
         self.latencies[name] = latency
-        self._update_offsets()
         
     async def put(self, name: str, obj: Any, expire_time: float):
         # 给 name 队列放一个对象和它的有效期。如果时间戳为 math.inf，那就说明整个 session 结束了。
         # 这个对象的有效期的结束就是下一个对象有效期的开始。
         # 有效期添加一个偏移量，用于抵消下游的延迟。
         if name not in self.queues: raise ValueError(f"Unknown queue {name}")
-        await self.queues[name].put((obj, expire_time + self.offsets[name]))
+        await self.queues[name].put((obj, expire_time + self.latencies[name]))
 
             
-    async def get(self, no_wait: bool=True):
+    async def get(self):
         # 如果所有 session 都结束了，并且下个 session 的数据也都来了，那么就重置时间戳，开始下个 session
         if all([expire_time is math.inf for _, expire_time in self.latest.values()]): 
             if all([q.qsize() > 0 for q in self.queues.values()]):
@@ -90,11 +84,8 @@ class RealtimeQueueGroup:
             if req_time <= expire_time: 
                 return self.latest
             else:
-                if no_wait and self.queues[name].qsize() == 0:
-                    return self.latest 
-                else:
-                    await self._next_obj(name)
- 
+                await self._next_obj(name)
+
 
 class ChatdemoServer(Server):
     
@@ -113,18 +104,17 @@ class ChatdemoServer(Server):
         # )
         self.rqg = RealtimeQueueGroup(
             names=['chattts'], 
-            init_objs=[None, None],
+            init_objs=[[None, None]],
             latencies=[0.1]
         )
         
-        self.meta: Dict[str, Dict] = {}
         
     async def handle_chattts(self, socket: Socket, meta):
         await self.wait_ready('speaker')
         
-        speaker_chunk_size = self.meta['speaker'][speaker_chunk_size]
-        speaker_sr = self.meta['speaker']['sr'] 
-        speaker_lat = self.meta['speaker']['latency']
+        speaker_chunk_size = self.meta_by_name['speaker']['blocksize']
+        speaker_sr = self.meta_by_name['speaker']['sr'] 
+        speaker_lat = self.meta_by_name['speaker']['latency']
         self.rqg.set_latency('chattts', speaker_lat)
         
         while True:
@@ -147,7 +137,8 @@ class ChatdemoServer(Server):
                 await self.rqg.put('chattts', [wav[i:i+speaker_chunk_size], sr], (i + speaker_chunk_size) / sr)
             
             # 结束之后传个空的进去，在 speaker 里处理
-            self.rqg.put('chattts', [None, None], math.inf)
+            print("chattts wav done")
+            await self.rqg.put('chattts', [None, None], math.inf)
             
 
     async def handle_talkshow(self, socket: Socket, meta):
@@ -190,9 +181,19 @@ class ChatdemoServer(Server):
             })
             
     async def handle_speaker(self, socket: Socket, meta):
+        last_expire_time = None
+        sr = meta['sr']
+        blocksize = meta['blocksize']
+        
         while True:
             await socket.recv()
-            await socket.send_pyobj((await self.rqg.get())['chattts'])
+            while True:
+                (wav, _), expire_time = (await self.rqg.get())['chattts']
+                if expire_time != last_expire_time:
+                    last_expire_time = expire_time
+                    await socket.send_pyobj([wav, sr])
+                    break
+                await asyncio.sleep(blocksize / sr / 2)
     
     async def serve(self):
         await super().serve()

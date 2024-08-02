@@ -28,5 +28,5 @@ def fake_talkshow(path, **kwargs):
             
 
 if __name__ == "__main__":
-    fake_talkshow('./data/demo_pose', fps=5, generate_fps=6)
+    fake_talkshow('./data/demo_pose', fps=30, generate_fps=40)
     
