@@ -1,2 +1,2 @@
 cd /workspace/audio2flame
-python infer.py --device "cuda:1"  --flame_params_path "./data/0703_1/fit_flame/000000.npz" --ckpt_path "./data/0703_1/ckpt/finetune_0703_1.tar" --hubert_path "./adnerf_models/hubert-large/chinese-hubert-large.pt"
+python infer.py --device "cuda:1"  --flame_params_path "./data/0703_1/fit_flame/000000.npz" --ckpt_path "./data/0703_1/ckpt/finetune_0703_1.tar" --hubert_path "./adnerf_models/hubert-large/chinese-hubert-large.pt" --blink_interval 100

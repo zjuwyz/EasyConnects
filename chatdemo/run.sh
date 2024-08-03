@@ -1,6 +1,7 @@
 # Kill any existing 'test' sessions
 tmux kill-session -t test
 
+sleep 0.5
 # Create a new session called 'test' and launch it detached
 tmux -u new-session -d -s test
 
@@ -23,12 +24,12 @@ tmux split-window -v
 
 tmux selectp -t 1
 tmux send-keys 'which python' C-m
-tmux send-keys "python chatdemo/fake_talkshow.py" C-m
-#tmux send-keys "chatdemo/talkshow.sh" C-m
+#tmux send-keys "python chatdemo/fake_talkshow.py" C-m
+tmux send-keys "chatdemo/talkshow.sh" C-m
 
 tmux selectp -t 2
 tmux send-keys 'which python' C-m
-tmux send-keys "python chatdemo/fake_chattts.py" C-m
+# tmux send-keys "python chatdemo/fake_chattts.py" C-m
 
 tmux selectp -t 3
 tmux send-keys 'which python' C-m
