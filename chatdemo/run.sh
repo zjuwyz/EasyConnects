@@ -38,7 +38,7 @@ tmux send-keys "chatdemo/easyvolcap.sh" C-m
 tmux selectp -t 4
 tmux send-keys 'which python' C-m
 #tmux send-keys "python chatdemo/fake_speaker.py" C-m
-tmux send-keys "chatdemo/remote-speaker.sh"
+# tmux send-keys "chatdemo/remote-speaker.sh"
 
 tmux selectp -t 5
 tmux send-keys 'which python' C-m

@@ -16,6 +16,7 @@ def audio_callback(outdata: np.ndarray, frames, time, status):
         outdata[:l, 0] = wav[:l]
 
 latency = 0.5
+wsl_latency = 0.5
 sr = 44100 
 blocksize=int(sr * latency / 5)
 
@@ -25,7 +26,7 @@ blocksize=int(sr * latency / 5)
 # wav = np.sin(2 * np.pi * freq * t).astype(np.float32) # Convert data to float32 type
 
 stream = sd.OutputStream(callback= audio_callback, channels=1, dtype='float32', latency=latency, blocksize=blocksize)
-client = Client('speaker', sr=sr, latency=latency, blocksize=blocksize)
+client = Client('speaker', sr=sr, latency=latency + wsl_latency, blocksize=blocksize)
 
 stream.start()
 
