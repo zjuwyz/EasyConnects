@@ -45,6 +45,7 @@ class Server:
         self.socket_by_name: Dict[str, Socket] = {}
         self.ready: Dict[str, asyncio.Event] = {}
         self.meta_by_name: Dict[str, Any] = {}
+        self.auto_start_handler=True
     
     async def wait_ready(self, name):
         if name not in self.ready: self.ready[name] = asyncio.Event()
@@ -63,7 +64,7 @@ class Server:
         while True:
             try:
                 name = await self.endpoint_socket.recv_string()
-                if not hasattr(self, f"handle_{name}"):
+                if self.auto_start_handler and not hasattr(self, f"handle_{name}"):
                     raise ValueError(f"Handler for {name} not implemented")
                 
                 if name in self.socket_by_name:
@@ -87,7 +88,9 @@ class Server:
                 print(f"{name} connected")
                 self.ready[name].set()
                 self.socket_by_name[name] = socket
-                self.__tasks[name] = asyncio.create_task(handle(socket, meta))
+                
+                if self.auto_start_handler:
+                    self.__tasks[name] = asyncio.create_task(handle(socket, meta))
                 
             except ValueError as e:
                 print(e)

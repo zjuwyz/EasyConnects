@@ -26,21 +26,22 @@ def fake_chattts(path, **kwargs):
     segs = list(os.listdir(path))
     segs.sort(key=lambda x: int(x))
     client=Client(topic)
-    
-    for seg in segs:
-        print(f"seg {seg} loading file")
-        import pickle
-        with open(os.path.join(path, seg, 'audio.pkl'), 'rb') as f:
-            wav, sr = pickle.load(f)
-            wav = pad_audio(wav, sr)
+    wav, sr = librosa.load("data/infer.mp3")
+    client.send_pyobj([wav, sr])
+    # for seg in segs:
+    #     print(f"seg {seg} loading file")
+    #     import pickle
+    #     with open(os.path.join(path, seg, 'audio.pkl'), 'rb') as f:
+    #         wav, sr = pickle.load(f)
+    #         wav = pad_audio(wav, sr)
 
-        # TODO: Padding with an empty second of audio
-        # if there's people speaking in last 1 second, pad with 1 second empty wav
-        # Also if there's people speaking in first 1 seconds, pad with 1 second wav
-        print(f"loaded wav length {wav.shape[0] / sr}")
-        client.send_pyobj([wav, sr])
-        print("wav sent")
-        time.sleep(len(wav)/sr + 5) 
+    #     # TODO: Padding with an empty second of audio
+    #     # if there's people speaking in last 1 second, pad with 1 second empty wav
+    #     # Also if there's people speaking in first 1 seconds, pad with 1 second wav
+    #     print(f"loaded wav length {wav.shape[0] / sr}")
+    #     client.send_pyobj([wav, sr])
+    #     print("wav sent")
+    #     time.sleep(len(wav)/sr + 5) 
         
 if __name__ == "__main__":
     fake_chattts('data_segs')

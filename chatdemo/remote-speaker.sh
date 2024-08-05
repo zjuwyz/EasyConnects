@@ -1,1 +1,0 @@
-ssh -t wangyize@10.100.215.86 "cd chatdemo/easyconnects && python chatdemo/speaker.py"

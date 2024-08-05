@@ -10,15 +10,18 @@ wav_queue = queue.Queue()
 def audio_callback(outdata: np.ndarray, frames, time, status):
     global wav, sr
     if wav_queue.empty() or (wav := wav_queue.get()) is None:
-        outdata.fill(0)  # Silence if no data available
+        print("Audio queue empty")
+    wav, chunk = wav_queue.get()
+    if wav is None:
+        outdata[:] = 0
     else:
-        l = max(len(wav), len(outdata))
+        print("playing chunk {}".format(chunk))
+        l = min(len(wav), len(outdata))
         outdata[:l, 0] = wav[:l]
 
-latency = 0.5
-wsl_latency = 0.5
+latency = 1.0
 sr = 44100 
-blocksize=int(sr * latency / 5)
+blocksize=int(sr * latency / 10)
 
 # freq = 440 # Hz, frequency of the sound you want to generate
 # duration = 1 # seconds
@@ -26,7 +29,7 @@ blocksize=int(sr * latency / 5)
 # wav = np.sin(2 * np.pi * freq * t).astype(np.float32) # Convert data to float32 type
 
 stream = sd.OutputStream(callback= audio_callback, channels=1, dtype='float32', latency=latency, blocksize=blocksize)
-client = Client('speaker', sr=sr, latency=latency + wsl_latency, blocksize=blocksize)
+client = Client('speaker', sr=sr, latency=latency, blocksize=blocksize)
 
 stream.start()
 
@@ -36,7 +39,7 @@ import time
 while True:
     client.send(b'')
     wav, sr, expire_time = client.recv_pyobj()
-    wav_queue.put(wav)
+    wav_queue.put((wav, chunk_id))
     print(f"received chunk {chunk_id} expire_time {expire_time:5.2f}")
     chunk_id += 1
     time.sleep(duration / 10)

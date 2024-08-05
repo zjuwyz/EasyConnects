@@ -9,3 +9,15 @@ EC_KNOWN_PORTS = {
     'speaker':12014,
     'easyvolcap':12015
 }
+
+from collections import namedtuple
+class TimeStamp(namedtuple('TimeStamp', ['num', 'start', 'end'])):
+    def __repr__(self):
+        return f"#{self.num} {self.start:6.3f}s - {self.end:6.3f}s"
+
+    def partition(self, index, total):
+        duration = (self.end - self.start) / total
+        start = self.start + duration * index
+        end = start + duration
+        index = self.num * total + index
+        return TimeStamp(index, start, end)
