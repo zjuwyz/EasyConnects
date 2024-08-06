@@ -29,8 +29,8 @@ tmux send-keys "chatdemo/talkshow.sh" C-m
 
 tmux selectp -t 2
 tmux send-keys 'which python' C-m
-tmux send-keys "python chatdemo/fake_chattts.py" C-m
-#tmux send-keys "chatdemo/chattts.sh" C-m
+#tmux send-keys "python chatdemo/fake_chattts.py" C-m
+tmux send-keys "chatdemo/chattts.sh" C-m
 
 tmux selectp -t 3
 tmux send-keys 'which python' C-m
@@ -39,15 +39,15 @@ tmux send-keys "chatdemo/easyvolcap.sh" C-m
 
 tmux selectp -t 4
 tmux send-keys 'which python' C-m
-tmux send-keys "python chatdemo/speaker.py" C-m
+# tmux send-keys "python chatdemo/speaker.py" C-m
 
 tmux selectp -t 5
 tmux send-keys 'which python' C-m
-#tmux send-keys "python chatdemo/fake_flame.py" C-m
+# tmux send-keys "python chatdemo/fake_flame.py" C-m
 tmux send-keys "chatdemo/flame.sh" C-m
 
 tmux selectp -t 6
 tmux send-keys 'which python' C-m
-#tmux send-keys "python chatdemo/chatdemo_server.py" C-m
+# tmux send-keys "python chatdemo/chatdemo_server.py" C-m
 
 # tmux attach
