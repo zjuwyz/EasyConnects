@@ -25,9 +25,17 @@ def fake_chattts(path, **kwargs):
     topic = "chattts"
     segs = list(os.listdir(path))
     segs.sort(key=lambda x: int(x))
-    client=Client(topic)
     wav, sr = librosa.load("data/infer.mp3")
+    #wav, sr = librosa.load("data/0703_1_sync.mp3")
+    #wav, sr = np.zeros((44100 * 100), dtype=np.float32), 44100
+    client=Client(topic, sr=sr)
+    
+    from easyconnects import TimeStamp
+    ts = TimeStamp(0, 0, sr / len(wav))
+    input()
+    print("send wav")
     client.send_pyobj([wav, sr])
+    client.recv()
     # for seg in segs:
     #     print(f"seg {seg} loading file")
     #     import pickle

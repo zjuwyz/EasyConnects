@@ -81,15 +81,15 @@ class Server:
                     socket.bind(endpoint)
                     
                 await self.endpoint_socket.send_string(endpoint)
-                handle = getattr(self, f"handle_{name}")
                 if name not in self.ready: self.ready[name] = asyncio.Event()
                 self.meta_by_name[name] = meta = await socket.recv_pyobj()
                 await socket.send(b'')
                 print(f"{name} connected")
-                self.ready[name].set()
                 self.socket_by_name[name] = socket
+                self.ready[name].set()
                 
                 if self.auto_start_handler:
+                    handle = getattr(self, f"handle_{name}")
                     self.__tasks[name] = asyncio.create_task(handle(socket, meta))
                 
             except ValueError as e:

@@ -9,9 +9,6 @@ class Socket(zmq.Socket):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-    def send_int(self, x: int, length=4, endian="little", *args, **kwargs):
-        self.send(x.to_bytes(length, byteorder=endian), *args, **kwargs)
-        
     def send_npz(self, *args, **kwargs):
         import numpy as np
         buf = io.BytesIO()
@@ -19,9 +16,6 @@ class Socket(zmq.Socket):
         buf.seek(0)
         self.send(buf.read())
     
-    def recv_int(self, endian="little", *args, **kwargs):
-        return int.from_bytes(self.recv(*args, **kwargs), byteorder=endian)
-        
         
     def recv_npz(self, *args, **kwargs):
         import numpy as np
