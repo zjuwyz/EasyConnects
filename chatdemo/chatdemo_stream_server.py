@@ -62,7 +62,10 @@ class ChatdemoServer(Server):
                 timeout = deadline - timer.now()
                 if timeout <= 0:
                     raise asyncio.TimeoutError
-                wav, origin_sr = await asyncio.wait_for(input_socket.recv_pyobj(), timeout)
+                wav, sr = await asyncio.wait_for(input_socket.recv_pyobj    (), timeout)
+                if (sr != origin_sr):
+                    logger.error(f"sr {sr} origin_sr {sr}")
+                    exit(0)
             except asyncio.TimeoutError:
                 # 没有音频输入。给这个到期的往后塞个 chunk，无事发生
                 socket = self.socket_by_name[name]
@@ -145,7 +148,7 @@ class ChatdemoServer(Server):
         
         await self.wait_ready('easyvolcap')
         render = self.socket_by_name['easyvolcap']
-        latency = 1.2
+        latency = 1.3
         while True:
             await render.recv()
             logger.info("recv easyvolcap signal")
