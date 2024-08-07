@@ -48,6 +48,6 @@ tmux send-keys "chatdemo/flame.sh" C-m
 
 tmux selectp -t 6
 tmux send-keys 'which python' C-m
-# tmux send-keys "python chatdemo/chatdemo_server.py" C-m
+tmux send-keys "python chatdemo/chatdemo_stream_server.py" C-m
 
 # tmux attach
