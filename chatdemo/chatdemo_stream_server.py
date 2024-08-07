@@ -62,7 +62,7 @@ class ChatdemoServer(Server):
                 timeout = deadline - timer.now()
                 if timeout <= 0:
                     raise asyncio.TimeoutError
-                wav, sr = await asyncio.wait_for(input_socket.recv_pyobj    (), timeout)
+                wav, sr = await asyncio.wait_for(input_socket.recv_pyobj(), timeout)
                 if (sr != origin_sr):
                     logger.error(f"sr {sr} origin_sr {sr}")
                     exit(0)
@@ -75,7 +75,7 @@ class ChatdemoServer(Server):
                 wav_ts = TimeStamp(id="e", start=start, end=end)
                 deadlines[name] = end
                 await socket.send_pyobj((wav, wav_ts))
-                logger.info(f"audio send to {name} {wav_ts}")
+                #logger.info(f"audio send to {name} {wav_ts}")
                 continue
             
             length: float = len(wav) / origin_sr
@@ -129,7 +129,7 @@ class ChatdemoServer(Server):
             socket = self.socket_by_name["talkshow"]
             while True:
                 pose, pose_ts = await socket.recv_pyobj()
-                logger.debug(f"recv pose {pose_ts}")
+                #logger.debug(f"recv pose {pose_ts}")
 
                 poses.put_nowait((pose, pose_ts))
         
@@ -137,7 +137,7 @@ class ChatdemoServer(Server):
             socket = self.socket_by_name["flame"]
             while True:
                 exp_code, flame_pose_params, flame_ts = await socket.recv_pyobj()
-                logger.debug(f"recv flame {flame_ts}")
+                #logger.debug(f"recv flame {flame_ts}")
                 flames.put_nowait((exp_code, flame_pose_params, flame_ts))
             
         asyncio.create_task(recv_pose())
@@ -148,10 +148,10 @@ class ChatdemoServer(Server):
         
         await self.wait_ready('easyvolcap')
         render = self.socket_by_name['easyvolcap']
-        latency = 1.3
+        latency = 1.2
         while True:
             await render.recv()
-            logger.info("recv easyvolcap signal")
+            #logger.info("recv easyvolcap signal")
             now = timer.now() - latency
             while now >= last_pose[-1].end:
                 
@@ -161,8 +161,8 @@ class ChatdemoServer(Server):
             await render.send_json(last_pose[0])
             exp_code, flame_pose_params = last_flame[:2]
             await render.send_npz(exp_code=exp_code, flame_pose_params=flame_pose_params)
-            logger.info(f"send easyvolcap pose {last_pose[-1]}")
-            logger.info(f"send easyvolcap flame {last_flame[-1]}")
+            #logger.info(f"send easyvolcap pose {last_pose[-1]}")
+            #logger.info(f"send easyvolcap flame {last_flame[-1]}")
     
     async def talkshow_only(self):
         init_flame = np.load('./init.npz')
